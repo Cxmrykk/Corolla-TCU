@@ -14,27 +14,27 @@ struct GraphFunction {
 }
 
 fn main() {
-    let application = create_application();
+    let application = create_application("com.github.Cxmrykk.CTDI");
     application.run();
 }
 
-fn create_application() -> Application {
+fn create_application(id: &str) -> Application {
     let application = Application::builder()
-        .application_id("com.github.gtk-rs.examples.basic")
+        .application_id(id)
         .build();
 
     application.connect_activate(|app| {
-        let window = create_window(app);
+        let window = create_window(app, "CTDI - A245E PCM Analyser");
         window.show();
     });
 
     application
 }
 
-fn create_window(app: &Application) -> ApplicationWindow {
+fn create_window(app: &Application, title: &str) -> ApplicationWindow {
     let window = ApplicationWindow::builder()
         .application(app)
-        .title("Line Graph")
+        .title(title)
         .default_width(800)
         .default_height(600)
         .build();
