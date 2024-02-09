@@ -1,8 +1,11 @@
 use esp_idf_svc::hal as esp_idf_hal;
 use esp_idf_hal::prelude::Peripherals;
 use esp_idf_hal::gpio::{PinDriver, Pull};
-use esp_idf_hal::delay::FreeRtos;
+use esp_idf_hal::task::block_on;
 use std::io::{Write, stdout};
+
+const START_MARKER: u8 = 0x01; // SOH
+const END_MARKER: u8 = 0x0A; // CARRIAGE RETURN (line termination sends buffer to stdout, converts to line feed)
 
 fn main() -> anyhow::Result<()> {
     esp_idf_hal::sys::link_patches();
@@ -29,22 +32,27 @@ fn main() -> anyhow::Result<()> {
     //gpio15.set_pull(Pull::Floating)?;
 
     let mut stdout = stdout();
-    let mut buffer: [u8; 2] = [0x00, 0x0A]; // newline hack
+    let mut buffer: [u8; 10] = [0; 10];
+    buffer[0] = START_MARKER;
+    buffer[9] = END_MARKER;
 
-    loop {
-        buffer[0] = 0x00
-        | (gpio40.is_high() as u8)
-        | (gpio41.is_high() as u8) << 1
-        | (gpio42.is_high() as u8) << 2
-        | (gpio43.is_high() as u8) << 3
-        | (gpio44.is_high() as u8) << 4
-        | (gpio45.is_high() as u8) << 5
-        | (gpio46.is_high() as u8) << 6
-        //| (gpio15.is_high() as u8) << 7
-        ;
+    block_on(async {
+        loop {
+            for i in 1..=8 {
+                buffer[i] = 0x00
+                | (gpio40.is_high() as u8)
+                | (gpio41.is_high() as u8) << 1
+                | (gpio42.is_high() as u8) << 2
+                | (gpio43.is_high() as u8) << 3
+                | (gpio44.is_high() as u8) << 4
+                | (gpio45.is_high() as u8) << 5
+                | (gpio46.is_high() as u8) << 6
+                //| (gpio15.is_high() as u8) << 7
+                ;
+            }
 
-        stdout.write_all(&buffer)?;
-        stdout.flush()?;
-        FreeRtos::delay_ms(10);
-    }
+            stdout.write_all(&buffer)?;
+            stdout.flush()?;
+        }
+    })
 }
